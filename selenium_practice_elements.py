@@ -11,7 +11,6 @@ import re
 from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.support.select import Select
 
-
 chrome_options = webdriver.ChromeOptions()
 chrome_options.add_argument('--disable-popup-blocking')
 
@@ -293,25 +292,16 @@ def drag_and_drop():
         wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'a[href="/drag_and_drop"]'))).click()
         a = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#column-a')))
         b = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#column-b')))
-
+        b_column = b.text
         actions = ActionChains(driver)
         actions.drag_and_drop(a, b).perform()
         sleep(2)
         logging.info(f"A Swapped to B")
-        a_column = a.text
-        b_column = b.text
         try:
-            all_elements = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div#columns div')))
-
-            def verification_drag_and_drop(column):
-                for element in all_elements:
-                    if element.text == column:
-                        break
-
-            columns = [a_column, b_column]
-            for column in columns:
-                verification_drag_and_drop(column)
-            logging.info(f"Drag and drop worked successfully")
+            a_element = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '#column-a')))
+            a_element_text = a_element.text
+            if b_column == a_element_text:
+                logging.info(f"Drag and Drop worked as expected")
 
         except Exception as inner_info:
             logging.warning(f"Drag and drop checking logic as some problem {inner_info}")
@@ -324,7 +314,7 @@ def drag_and_drop():
 
 def drop_down():
     print('Drop Down')
-    wait = WebDriverWait(driver,10)
+    wait = WebDriverWait(driver, 10)
     try:
         wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'a[href="/dropdown"]'))).click()
         dropdown_elements = Select(wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'select#dropdown'))))
@@ -335,7 +325,109 @@ def drop_down():
         sleep(2)
         driver.back()
     except Exception as e:
-        logging.info(f"An Error occurred : {e}")
+        logging.error(f"An Error occurred : {e}")
+
+
+def dynamic_content():
+    try:
+        print("Dynamic content")
+        wait = WebDriverWait(driver, 10)
+        wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'a[href="/dynamic_content"]'))).click()
+
+        def page_refresh(refresh_count):
+            photo_elements = wait.until(
+                EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div.row div.large-2 img')))
+            text_element = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div.row div.large-10')))
+            for index in range(len(photo_elements)):
+                img_src = photo_elements[index].get_attribute('src')
+                logging.info(f"{index + 1} person photo {img_src}")
+                sleep(1)
+                logging.info(f"Details : {text_element[index + 1].text}")
+                sleep(1)
+            if not refresh_count == 2:
+                driver.refresh()
+                wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div.row div.large-2 img')))
+                logging.info(f"{i + 1} Refresh of page")
+
+        for i in range(3):
+            page_refresh(i)
+
+        sleep(2)
+        driver.back()
+    except Exception as e:
+        logging.error(f"An error occurred : {e}")
+
+
+def dynamic_controls():
+    try:
+        print('Dynamic Controls')
+
+        def remove_add():
+            try:
+                print('Remove Add')
+                wait = WebDriverWait(driver, 10)
+                wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "a[href='/dynamic_controls']"))).click()
+                checkbox = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'input[type="checkbox"]')))
+                checkbox.click()
+                assert checkbox.is_selected()
+                logging.info('Check box is selected')
+                remove_add_element = wait.until(
+                    EC.element_to_be_clickable((By.CSS_SELECTOR, "form#checkbox-example button[type='button']")))
+                remove_add_element.click()
+                wait.until(EC.invisibility_of_element((By.CSS_SELECTOR, "div#loading")))
+                logging.info(f"Wait is over")
+                message = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'p#message')))
+                logging.info(f"Message is: {message.text}")
+                for i in range(5):
+                    if remove_add_element.text == 'Add':
+                        remove_add_element.click()
+                        wait.until(EC.invisibility_of_element((By.CSS_SELECTOR, "div#loading")))
+                        message = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'p#message')))
+                        logging.info(f"Message is: {message.text}")
+                        checkbox = wait.until(
+                            EC.presence_of_element_located((By.CSS_SELECTOR, 'input[type="checkbox"]')))
+                        checkbox.click()
+                        logging.info('Check box is selected')
+                        remove_add_element.click()
+                        wait.until(EC.invisibility_of_element((By.CSS_SELECTOR, "div#loading")))
+                        message = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'p#message')))
+                        logging.info(f"Message is: {message.text}")
+
+            except Exception as e:
+                logging.error(f"An error occurred in remove add function : {e}")
+
+        def enable_disable():
+            try:
+                print('Enable Disable')
+                wait = WebDriverWait(driver, 10)
+                enable_disable_element = wait.until(
+                    EC.element_to_be_clickable((By.CSS_SELECTOR, 'form#input-example button[type="button"]')))
+                enable_disable_element.click()
+                wait.until(EC.invisibility_of_element((By.CSS_SELECTOR, 'div#loading')))
+                enabled_text = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'form#input-example '
+                                                                                           'p#message'))).text
+                logging.info(enabled_text)
+                input_text = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'form#input-example input[type="text"]')))
+                input_text.send_keys('Neela')
+                sleep(2)
+                enable_disable_element = wait.until(
+                    EC.element_to_be_clickable((By.CSS_SELECTOR, 'form#input-example button[type="button"]')))
+                enable_disable_element.click()
+                sleep(1)
+                enabled_text = wait.until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, 'form#input-example p#message'))).text
+                logging.info(enabled_text)
+
+            except Exception as e:
+                logging.error(f"An error occurred in enable disable function: {e}")
+        remove_add()
+        enable_disable()
+
+        sleep(2)
+        driver.back()
+
+    except Exception as e:
+        logging.error(f"An error occurred in dynamic controls: {e}")
 
 
 if __name__ == "__main__":

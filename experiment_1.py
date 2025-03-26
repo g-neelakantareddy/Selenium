@@ -1,4 +1,4 @@
 from selenium_practice_elements import *
 
-drop_down()
+dynamic_controls()
 close_browser()
